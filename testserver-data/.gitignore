@@ -1,0 +1,12 @@
+homeserver.db
+adminuser.json
+botuser.json
+frienduser.json
+randomuser.json
+intermediate
+root-ca
+synapse.key
+synapse.csr
+synapse.crt
+fullchain.pem
+*.log

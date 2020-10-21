@@ -1,0 +1,39 @@
+server_name: "synapse"
+pid_file: /data/homeserver.pid
+tls_certificate_path: "/data/synapse.crt"
+tls_private_key_path: "/data/synapse.key"
+federation_ip_range_blacklist:
+  - '0.0.0.0/0'
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+
+    resources:
+      - names: [client, federation]
+        compress: false
+  - port: 8448
+    type: http
+    tls: true
+    x_forwarded: false
+
+    resources:
+      - names: [client, federation]
+        compress: false
+database:
+  name: sqlite3
+  args:
+    database: /data/homeserver.db
+log_config: "/data/synapse.log.config"
+media_store_path: "/data/media_store"
+enable_registration: true
+registration_shared_secret: "testing-registration-shared-secret"
+enable_metrics: false
+report_stats: false
+macaroon_secret_key: "testing-macaroon-secret-key"
+form_secret: "testing-form-secret"
+signing_key_path: "/data/synapse.signing.key"
+rc_registration:
+  burst_count: 5.0
+

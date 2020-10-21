@@ -1,8 +1,8 @@
 FROM python:3.8-slim
 
 WORKDIR /bot
-RUN apt update
-RUN apt -y install libcups2-dev python3-dev gcc
+RUN apt-get update
+RUN apt-get -y install libcups2-dev python3-dev gcc
 
 COPY Pipfile .
 RUN pip install pipenv && \

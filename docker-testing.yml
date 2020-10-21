@@ -1,0 +1,55 @@
+version: "3.4"
+
+services:
+  synapse:
+    container_name: "synapse"
+    image: "matrixdotorg/synapse:latest"
+    restart: "unless-stopped"
+    environment:
+      - SYNAPSE_SERVER_NAME=synapse
+      - SYNAPSE_REPORT_STATS=yes
+    ports:
+      - "127.0.0.1:18008:8008"
+      - "127.0.0.1:18448:8448"
+    volumes:
+      - "./testserver-data/:/data/:rw"
+
+  matrix-commander:
+    container_name: "matrix-commander"
+    build:
+      # FIXME: should be using the upstream repo, which lacks room support
+      #context: https://github.com/8go/matrix-commander.git
+      context: ../matrix-commander
+      dockerfile: docker/Dockerfile
+    restart: "no"
+    volumes:
+      - "./testclient-data/:/data:z"
+      - "./testserver-data/fullchain.pem:/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+      # FIXME: currently using the local code over the one baked into image
+      - "../matrix-commander/matrix-commander.py:/app/matrix-commander.py"
+
+  hemppa:
+    container_name: hemppa
+    image: 'hemppa:latest'
+    build: '.'
+    restart: "no"
+    stop_signal: SIGINT
+    environment:
+      - MATRIX_ACCESS_TOKEN
+      - MATRIX_USER
+      - MATRIX_SERVER
+      - JOIN_ON_INVITE
+      - BOT_OWNERS
+      - DEBUG
+      - TZ
+    volumes:
+      - "./testbot-data/config/:/bot/config"
+      - "./testbot-data/credentials.json:/bot/credentials.json"
+      # we want to be able to inspect this
+      - "./testbot-data/token.pickle:/bot/token.pickle"
+      # we're overriding the certificate store with our own self-signed certs for full verification
+      - "./testserver-data/fullchain.pem:/usr/lib/ssl/cert.pem"
+      - "./testserver-data/fullchain.pem:/usr/local/lib/python3.8/site-packages/certifi/cacert.pem"
+      # using the local code over the one baked into image
+      - "./bot.py:/bot/bot.py"
+      - "./modules:/bot/modules"

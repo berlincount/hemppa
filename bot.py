@@ -19,7 +19,7 @@ import datetime
 from importlib import reload
 
 import requests
-from nio import AsyncClient, InviteEvent, JoinError, RoomMessageText, MatrixRoom, LoginError, RoomMemberEvent, RoomVisibility, RoomPreset, RoomCreateError, RoomResolveAliasResponse, UploadError, UploadResponse
+from nio import AsyncClient, InviteMemberEvent, JoinError, RoomMessageText, MatrixRoom, LoginError, RoomMemberEvent, RoomVisibility, RoomPreset, RoomCreateError, RoomResolveAliasResponse, UploadError, UploadResponse
 
 # Couple of custom exceptions
 
@@ -283,9 +283,19 @@ class Bot:
         """Checks if body starts with ! and has one or more letters after it"""
         return re.match(r"^!\w.*", body) is not None
 
+    async def catchall_cb(self, room, event):
+        self.logger.debug("catchall(%s(%s,%s)): %s |%s|",
+            room.__class__.__name__, room.room_id, room.display_name,
+            event.__class__.__name__, json.dumps(event.source)
+        )
+
     async def invite_cb(self, room, event):
-        room: MatrixRoom
-        event: InviteEvent
+        room: MatrixInvitedRoom
+        event: InviteMemberEvent
+
+        if event.state_key != self.client.user:
+            # not for us
+            return
 
         if self.join_on_invite or self.is_owner(event):
             for attempt in range(3):
@@ -302,8 +312,11 @@ class Bot:
     async def memberevent_cb(self, room, event):
         # Automatically leaves rooms where bot is alone.
         if room.member_count == 1 and event.membership=='leave':
-            self.logger.info(f"membership event in {room.display_name} ({room.room_id}) with {room.member_count} members by '{event.sender}' - leaving room as i don't want to be left alone!")
+            self.logger.info(f"membership event in {room.display_name} ({room.room_id}) with {room.member_count} members by '{event.sender}' - leaving room as I don't want to be left alone!")
             await self.client.room_leave(room.room_id)
+
+    async def megolmevent_cb(self, room, event):
+        self.client.request_room_key(event)
 
     def load_module(self, modulename):
         try:
@@ -433,13 +446,16 @@ class Bot:
 
         if self.client.logged_in:
             self.load_settings(self.get_account_data())
+            # let us print all events we receive when debugging
+            if logging.root.level >= logging.DEBUG:
+                self.client.add_event_callback(self.catchall_cb, None)
             self.client.add_event_callback(self.message_cb, RoomMessageText)
-            self.client.add_event_callback(self.invite_cb, (InviteEvent,))
+            self.client.add_event_callback(self.invite_cb, (InviteMemberEvent,))
             self.client.add_event_callback(self.memberevent_cb, (RoomMemberEvent,))
 
             if self.join_on_invite:
                 self.logger.info('Note: Bot will join rooms if invited')
-            self.logger.info('Bot running as %s, owners %s', self.client.user, self.owners)
+            self.logger.info('Bot running as %s, device %s, owners %s', self.client.user, (await self.client.devices()).devices, self.owners)
             self.bot_task = asyncio.create_task(self.client.sync_forever(timeout=30000))
             await self.bot_task
         else:
