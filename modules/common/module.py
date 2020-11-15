@@ -97,6 +97,8 @@ class BotModule(ABC):
             self.can_be_disabled = data['can_be_disabled']
 
     def enable(self):
+        if "__init_enabled" in self:
+            self.__init_enabled(name)
         self.enabled = True
 
     def disable(self):

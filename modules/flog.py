@@ -12,6 +12,9 @@ from modules.common.module import BotModule
 
 class MatrixModule(BotModule):
     def __init__(self, name):
+        self.enabled = False
+
+    def __init_enabled(self, name):
         super().__init__(name)
         self.service_name = 'FLOG'
         self.station_rooms = dict()  # Roomid -> ogn station

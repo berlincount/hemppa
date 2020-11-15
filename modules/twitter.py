@@ -10,6 +10,9 @@ from modules.common.pollingservice import PollingService
 
 class MatrixModule(PollingService):
     def __init__(self, name):
+        self.enabled = False
+
+    def __init_enabled(self, name):
         super().__init__(name)
         self.service_name = 'Twitter'
 

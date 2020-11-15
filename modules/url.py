@@ -19,6 +19,9 @@ class MatrixModule(BotModule):
     """
 
     def __init__(self, name):
+        self.enabled = False
+
+    def __init_enabled(self, name):
         super().__init__(name)
 
         self.bot = None

@@ -10,8 +10,10 @@ class MatrixModule(BotModule):
     """
 
     def __init__(self, name):
-        super().__init__(name)
         self.enabled = False
+
+    def __init_enabled(self, name):
+        super().__init__(name)
         self.rooms = dict()
 
     async def matrix_message(self, bot, room, event):
